@@ -116,6 +116,9 @@ The dots in the hostname were encoded as `%2e` because the server-side filter re
 10. Assigning it to `script.src` caused the anchor to be stringified to its `href`.
 11. The browser loaded and executed the attacker-controlled JavaScript.
 
+![WebhookCool request showing the browser loading the attacker-controlled script](/assets/img/posts/intigriti-0526/webhookcool-script-request.svg)
+_WebhookCool captured the browser requesting the attacker-controlled JavaScript as a script resource, with `challenge-0526.intigriti.io` as the referrer._
+
 The result was stored XSS on:
 
 ```text

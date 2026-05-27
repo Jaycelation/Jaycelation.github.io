@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1462" height="627" viewBox="0 0 1462 627" role="img" aria-labelledby="title desc">
+  <title id="title">WebhookCool request showing the injected script fetch</title>
+  <desc id="desc">A WebhookCool-style request view showing a GET request from the Intigriti challenge page to the attacker-controlled script endpoint.</desc>
+  <defs>
+    <linearGradient id="sidebar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6f1ed"/>
+      <stop offset="1" stop-color="#e8f6f2"/>
+    </linearGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#c7c7c7" flood-opacity=".22"/>
+    </filter>
+  </defs>
+
+  <rect width="1462" height="627" fill="#ffffff"/>
+  <rect x="0" y="0" width="445" height="627" fill="url(#sidebar)"/>
+  <rect x="445" y="0" width="1017" height="627" fill="#fbfbfb"/>
+
+  <circle cx="35" cy="32" r="7" fill="#f8f8f8" stroke="#9e9e9e" stroke-width="1.5"/>
+  <circle cx="62" cy="32" r="7" fill="#f8f8f8" stroke="#9e9e9e" stroke-width="1.5"/>
+  <circle cx="89" cy="32" r="7" fill="#f8f8f8" stroke="#9e9e9e" stroke-width="1.5"/>
+
+  <circle cx="43" cy="91" r="19" fill="#ffe35b"/>
+  <circle cx="36" cy="87" r="7" fill="#55c0ff"/>
+  <circle cx="50" cy="87" r="7" fill="#55c0ff"/>
+  <path d="M29 100c9 9 19 9 28 0" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round"/>
+  <text x="73" y="104" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="35" font-weight="700" fill="#292929">Webhook</text>
+  <text x="219" y="104" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="35" font-weight="400" fill="#292929">Cool</text>
+  <text x="383" y="97" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="28" fill="#777777">...</text>
+
+  <rect x="15" y="141" width="410" height="56" rx="13" fill="#ffffff" stroke="#ffffff" filter="url(#softShadow)"/>
+  <text x="36" y="175" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#000000">dashing-moon-37</text>
+  <text x="190" y="175" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="18" font-weight="600" fill="#9a9a9a">.webhook.cool</text>
+  <rect x="361" y="163" width="10" height="10" fill="none" stroke="#777" stroke-width="1.4"/>
+  <path d="M366 160h10v10" fill="none" stroke="#777" stroke-width="1.4"/>
+  <path d="M388 165l6 6 6-6" fill="none" stroke="#111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="15" y="228" width="410" height="49" rx="8" fill="#ffffff"/>
+  <text x="36" y="259" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="19" font-weight="500" fill="#000000">GET</text>
+  <text x="224" y="258" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="16" fill="#888888">22 May 15:14:08.566</text>
+  <path d="M386 248h15" stroke="#9a9a9a" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M390 249v13c0 2 2 4 4 4h2c2 0 4-2 4-4v-13" fill="none" stroke="#9a9a9a" stroke-width="1.5"/>
+  <path d="M391 244h8" stroke="#9a9a9a" stroke-width="1.5" stroke-linecap="round"/>
+
+  <rect x="496" y="4" width="948" height="623" rx="8" fill="#ffffff" stroke="#e8e8e8"/>
+  <g font-family="Inter, Segoe UI, Arial, sans-serif" font-size="19" fill="#333333">
+    <g>
+      <rect x="496" y="4" width="948" height="52" rx="8" fill="#ffffff"/>
+      <text x="511" y="39">Accept</text>
+      <text x="881" y="39">*/*</text>
+      <line x1="496" y1="56" x2="1444" y2="56" stroke="#ececec"/>
+    </g>
+    <g>
+      <text x="511" y="90">Accept-Encoding</text>
+      <text x="881" y="90" fill="#666666">gzip, br</text>
+      <line x1="496" y1="107" x2="1444" y2="107" stroke="#ececec"/>
+    </g>
+    <g>
+      <text x="511" y="140">Accept-Language</text>
+      <text x="881" y="139" fill="#666666">en-US,en;q=0.9,vi;q=0.8,fr-FR;q=0.7,fr;q=0.6,zh-</text>
+      <text x="881" y="165" fill="#666666">CN;q=0.5,zh;q=0.4</text>
+      <line x1="496" y1="184" x2="1444" y2="184" stroke="#ececec"/>
+    </g>
+    <g>
+      <text x="511" y="216">Connection</text>
+      <text x="881" y="216" fill="#666666">close</text>
+      <line x1="496" y1="234" x2="1444" y2="234" stroke="#ececec"/>
+    </g>
+    <g>
+      <text x="511" y="267">Referer</text>
+      <rect x="881" y="248" width="278" height="26" fill="#3f70d4"/>
+      <text x="881" y="267" fill="#ffffff">https://challenge-0526.intigriti.io/</text>
+      <line x1="496" y1="285" x2="1444" y2="285" stroke="#ececec"/>
+    </g>
+    <g>
+      <text x="511" y="318">Sec-Ch-Ua</text>
+      <text x="881" y="318" fill="#666666">"Chromium";v="148", "Google Chrome";v="148",</text>
+      <text x="881" y="344" fill="#666666">"Not(A)Brand";v="99"</text>
+      <line x1="496" y1="361" x2="1444" y2="361" stroke="#ececec"/>
+    </g>
+    <g>
+      <text x="511" y="394">Sec-Ch-Ua-Mobile</text>
+      <text x="881" y="394" fill="#666666">?0</text>
+      <line x1="496" y1="412" x2="1444" y2="412" stroke="#ececec"/>
+    </g>
+    <g>
+      <text x="511" y="445">Sec-Ch-Ua-Platform</text>
+      <text x="881" y="445" fill="#666666">"Windows"</text>
+      <line x1="496" y1="463" x2="1444" y2="463" stroke="#ececec"/>
+    </g>
+    <g>
+      <text x="511" y="496">Sec-Fetch-Dest</text>
+      <text x="881" y="496" fill="#666666">script</text>
+      <line x1="496" y1="514" x2="1444" y2="514" stroke="#ececec"/>
+    </g>
+    <g>
+      <text x="511" y="547">Sec-Fetch-Mode</text>
+      <text x="881" y="547" fill="#666666">no-cors</text>
+      <line x1="496" y1="565" x2="1444" y2="565" stroke="#ececec"/>
+    </g>
+    <g>
+      <text x="511" y="599">Sec-Fetch-Site</text>
+      <text x="881" y="599" fill="#666666">cross-site</text>
+      <line x1="496" y1="617" x2="1444" y2="617" stroke="#ececec"/>
+    </g>
+  </g>
+</svg>
