@@ -4,7 +4,7 @@ date: 2026-06-23 09:30:00 +0700
 categories: [Writeups, HackTheBox]
 tags: [HackTheBox, Linux, MCPJam, PrivateBin, Arcane, Docker, RCE, privilege-escalation]
 permalink: /posts/htb-kobold-writeup/
--------------------------------------
+---
 
 ## Overview
 
