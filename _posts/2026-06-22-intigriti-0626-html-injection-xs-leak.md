@@ -1,6 +1,6 @@
 ---
 title: "Intigriti 0626: Leaking Admin Private Notes with Reflected HTML Injection and XS-Leak"
-date: 2026-06-22 18:00:00 +0700
+date: 2026-06-22 00:00:00 +0700
 categories: [Writeups, Web Security]
 tags: [Intigriti, XS-Leak, HTML-injection, reflected-xss, CSP, iframe-oracle, bug-bounty, web-security]
 permalink: /posts/intigriti-0626-html-injection-xs-leak/
