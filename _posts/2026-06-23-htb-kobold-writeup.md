@@ -1,5 +1,4 @@
 ---
-
 title: "HTB Kobold Write-up: MCPJam RCE to Root"
 date: 2026-06-23 09:30:00 +0700
 categories: [Writeups, HackTheBox]
