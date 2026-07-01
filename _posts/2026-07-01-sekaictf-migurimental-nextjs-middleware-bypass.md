@@ -1,8 +1,8 @@
 ---
-title: "SekaiCTF: Migurimental - Next.js Middleware Bypass and Cookie Confusion"
+title: "SekaiCTF2026: [Web/0day]Migurimental - Next.js Middleware Bypass and Cookie Confusion"
 date: 2026-07-01 10:00:00 +0700
 categories: [Writeups, Web Security]
-tags: [SekaiCTF, web, Next.js, middleware-bypass, SSR, cookie-confusion, access-control, CTF]
+tags: [SekaiCTF, web, Next.js, middleware-bypass, SSR, cookie-confusion, access-control, CTF, 0day]
 permalink: /posts/sekaictf-migurimental-nextjs-middleware-bypass/
 ---
 
@@ -15,7 +15,7 @@ This write-up covers my solution for **Migurimental**, a web challenge from Seka
 
 | Challenge    | Category | Difficulty | Points | Solves |
 |--------------|----------|------------|--------|--------|
-| Migurimental | Web      | Easy       | 500    | 0      |
+| Migurimental | Web      | Easy       | 50    | 156      |
 
 The challenge description was:
 
@@ -156,47 +156,3 @@ SEKAI{7h3_l33k_15_b4ck_7h3_cr0wd_15_ch33r1ng_4nd_7h3_c0nc3r7_c4n_f1n4lly_b3g1n_m
 ```text
 SEKAI{7h3_l33k_15_b4ck_7h3_cr0wd_15_ch33r1ng_4nd_7h3_c0nc3r7_c4n_f1n4lly_b3g1n_m1ku_m1ku_b34mmmmmmmmmmmm}
 ```
-
-## Impact
-
-In a production application, this kind of mismatch can break authentication and authorization boundaries:
-
-- A middleware-only access check can be bypassed if internal framework routes interpret parameters differently from the middleware.
-- Duplicate security-sensitive cookies can create parser confusion between different request-processing layers.
-- Asset prefixes and rewritten routes can expose data endpoints that were not included in the intended middleware coverage.
-
-In this challenge, those issues allowed a normal user to read another user's access card, recover their ticket, impersonate them for the backroom page, and retrieve both halves of the flag.
-
-## Recommended Fix
-
-Authorization should not depend only on middleware. The server-side data loader or route handler should enforce the same ownership checks immediately before returning sensitive data.
-
-For the access-card route:
-
-- Use one canonical user ID source.
-- Reject requests where route parameters and query parameters disagree.
-- Check ownership in the server-side page logic, not just in middleware.
-
-For the backroom route:
-
-- Reject duplicate security-sensitive cookies such as `ticket_uuid`.
-- Normalize cookie parsing so middleware and SSR code use the same value.
-- Bind tickets to the authenticated session server-side instead of trusting a client-controlled ticket cookie alone.
-
-For the second service:
-
-- Ensure middleware matchers cover prefixed Next.js data routes.
-- Test authorization behavior through both normal page routes and `/_next/data/...` routes.
-- Treat asset prefixes and rewrites as part of the application attack surface.
-
-## Takeaways
-
-Next.js middleware is useful, but it is a fragile place to put the only authorization check. Middleware sees a transformed view of the request, while page rendering, SSR data loaders, and internal data routes may resolve parameters and cookies differently.
-
-This challenge was a nice reminder to test both the pretty route and the framework route. If `/access-card?id=...` is protected, the corresponding `/_next/data/<BUILD_ID>/access-card.json?...` route needs to be protected in exactly the same way.
-
-Cookie handling was the other key lesson. Duplicate cookies should be treated as invalid for authentication or authorization material. If two layers pick different values, an attacker may be able to satisfy one layer while controlling the other.
-
-## Disclosure Note
-
-This challenge was explicitly labeled as a 0day challenge. This write-up documents the CTF-specific exploit path and final flag, but avoids expanding the issue into a broader exploitation guide for unrelated targets.

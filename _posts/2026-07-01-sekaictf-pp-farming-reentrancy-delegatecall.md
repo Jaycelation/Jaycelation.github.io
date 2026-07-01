@@ -1,5 +1,5 @@
 ---
-title: "ProjectSekai CTF 2026: [Blockchain] / PP Farming — Reentrancy and Delegatecall Storage Collision"
+title: "SekaiCTF 2026: [Blockchain] / PP Farming — Reentrancy and Delegatecall Storage Collision"
 date: 2026-06-30 10:00:00 +0700
 categories: [Writeups, Blockchain Security]
 tags: [SekaiCTF2026, Solidity, reentrancy, delegatecall, storage-collision, smart-contract, blockchain-security, CTF]
@@ -478,7 +478,3 @@ When reviewing proxy-like contracts, always check:
 1. Whether the implementation address can be overwritten by an external caller.
 2. Whether the storage layouts of the proxy and implementation are aligned.
 3. Whether the fallback function restricts which calls can be forwarded.
-
-## Disclosure Note
-
-This write-up was published after SekaiCTF ended and solutions were permitted to be shared publicly.
