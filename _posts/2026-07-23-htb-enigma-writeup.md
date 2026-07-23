@@ -6,7 +6,7 @@ tags: [HackTheBox, Linux, NFS, Roundcube, OpenSTAManager, CVE-2025-69212, OliveT
 permalink: /posts/htb-enigma-writeup/
 image:
   path: /assets/img/posts/htb/enigma.png
-  alt: "Official Hack The Box Enigma machine avatar"
+  alt: "Enigma"
 ---
 
 > **Summary:** Enigma chains a world-readable NFS share, credential reuse through webmail, OpenSTAManager ZIP-import command injection, and an injectable root-run OliveTin action to obtain root.

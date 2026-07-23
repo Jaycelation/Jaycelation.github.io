@@ -6,7 +6,7 @@ tags: [HackTheBox, Linux, WordPress, stored-xss, AES-GCM, credential-reuse, OCR,
 permalink: /posts/htb-makesense-writeup/
 image:
   path: /assets/img/posts/htb/makesense.png
-  alt: "Official Hack The Box MakeSense machine avatar"
+  alt: "MakeSense"
 ---
 
 > **Summary:** MakeSense chains a client-exposed encryption key, stored XSS in a WordPress contact workflow, administrator plugin upload, leaked SSH credentials, and a root-run OCR service that writes PHP files to obtain root.

@@ -10,10 +10,10 @@ tags:
   # Add "Season 11" for Reactor, DevHub, Connected, Checkpoint, Nimbus,
   # Enigma, MakeSense, Paperwork, or Bedside.
 permalink: /posts/htb-<machine-slug>-writeup/
-# For Season 11 machines, download the official HTB avatar to the path below.
+# For Season 11 machines, download the HTB avatar to the path below.
 # image:
 #   path: /assets/img/posts/htb/<machine-slug>.png
-#   alt: "Official Hack The Box <MACHINE_NAME> machine avatar"
+#   alt: "<MACHINE_NAME>"
 ---
 
 > **Summary:** <ONE_OR_TWO_SENTENCES_DESCRIBING_THE_COMPLETE_EXPLOIT_CHAIN>
