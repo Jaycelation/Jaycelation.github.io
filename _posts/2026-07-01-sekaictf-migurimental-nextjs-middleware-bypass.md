@@ -1,21 +1,17 @@
 ---
 title: "SekaiCTF2026: [Web/0day]Migurimental - Next.js Middleware Bypass and Cookie Confusion"
 date: 2026-07-01 10:00:00 +0700
-categories: [Writeups, Web Security]
-tags: [SekaiCTF, web, Next.js, middleware-bypass, SSR, cookie-confusion, access-control, CTF, 0day]
+categories: [Writeups, CTF]
+tags: [SekaiCTF, web, Next.js, middleware-bypass, SSR, cookie-confusion, access-control, CTF, 0day, AI]
 permalink: /posts/sekaictf-migurimental-nextjs-middleware-bypass/
 ---
 
 > **Summary:** I solved Migurimental by abusing several authorization mismatches in a pair of Next.js applications. The first app leaked Miku's access-card data through a Next.js data route, then a duplicate-cookie parsing mismatch let me enter the backroom as Miku. The second app leaked the remaining flag half through a prefixed Next.js data route.
 {: .prompt-info }
 
-## Introduction
+## Challenge Overview
 
 This write-up covers my solution for **Migurimental**, a web challenge from SekaiCTF authored by **beluga**.
-
-| Challenge    | Category | Difficulty | Points | Solves |
-|--------------|----------|------------|--------|--------|
-| Migurimental | Web      | Easy       | 50    | 156      |
 
 The challenge description was:
 
@@ -30,15 +26,31 @@ The challenge had two live services:
 
 The flag was split between the two services. The first half was hidden behind Miku's backroom page, and the second half was exposed through the second service.
 
-## Target
+## Challenge Information
 
-- **CTF:** SekaiCTF
-- **Author:** beluga
-- **Category:** Web
-- **Win condition:** Recover both halves of the flag from the two Migurimental services
-- **Main bug class:** Next.js middleware authorization mismatch
+| Field | Value |
+|---|---|
+| CTF | SekaiCTF 2026 |
+| Challenge | Migurimental |
+| Category | Web |
+| Difficulty | Easy |
+| Points | 50 |
+| Author | beluga |
+| Solves | 156 |
 
-## Initial Observation
+The goal was to recover both halves of the flag from the paired Migurimental services. The main bug class was a Next.js middleware authorization mismatch.
+
+## Attack Path
+
+```text
+Next.js data route exposes Miku's access-card data
+-> recover Miku's ticket UUID
+-> duplicate-cookie parsing mismatch bypasses backroom authorization
+-> prefixed data route reveals the second flag half
+-> combine both halves of the flag
+```
+
+## Recon and Analysis
 
 After unpacking the attachment, the application looked like a standard Next.js service with middleware-based access control. A normal user could register, receive a session, and then visit their own access card:
 
@@ -84,7 +96,7 @@ The final issue was on the second service. The app used an asset prefix of `/cdn
 
 That route was not covered by the same middleware behavior, so it returned the page data containing the second half of the flag.
 
-## Exploit
+## Exploitation
 
 The full exploit chain was:
 
@@ -129,7 +141,7 @@ Cookie: ticket_uuid=92ca07cc-13bd-4d2b-b6b3-e8399790078a; session=<OWN_SESSION>;
 
 The middleware accepted the request because it validated my own ticket, but the SSR page rendered the backroom for Miku's ticket.
 
-## Exploitation Output
+## Proof
 
 I automated the chain with a Python script:
 
@@ -156,3 +168,12 @@ SEKAI{7h3_l33k_15_b4ck_7h3_cr0wd_15_ch33r1ng_4nd_7h3_c0nc3r7_c4n_f1n4lly_b3g1n_m
 ```text
 SEKAI{7h3_l33k_15_b4ck_7h3_cr0wd_15_ch33r1ng_4nd_7h3_c0nc3r7_c4n_f1n4lly_b3g1n_m1ku_m1ku_b34mmmmmmmmmmmm}
 ```
+
+## Takeaways
+
+- Authorization checks must use one canonical interpretation of duplicated cookies across middleware and server-side rendering.
+- Data routes need the same object-level authorization controls as their rendered page equivalents.
+
+## Disclosure Note
+
+The challenge included a 0day publication restriction, so this WU remains limited to the challenge-specific exploit chain.

@@ -1,15 +1,15 @@
 ---
 title: "Intigriti 0626: Leaking Admin Private Notes with Reflected HTML Injection and XS-Leak"
 date: 2026-06-22 00:00:00 +0700
-categories: [Writeups, Web Security]
-tags: [Intigriti, XS-Leak, HTML-injection, reflected-xss, CSP, iframe-oracle, bug-bounty, web-security]
+categories: [Writeups, Bug Bounty]
+tags: [Intigriti, XS-Leak, HTML-injection, reflected-xss, CSP, iframe-oracle, bug-bounty, web-security, AI]
 permalink: /posts/intigriti-0626-html-injection-xs-leak/
 ---
 
 > **Summary:** I solved the Intigriti 0626 challenge by turning a CSP-limited reflected HTML injection in `/search` into an XS-Leak oracle. The final exploit redirected the admin bot to an attacker-controlled controller and leaked the admin's private note title one character at a time.
 {: .prompt-info }
 
-## Introduction
+## Finding Overview
 
 This write-up covers my solution for the Intigriti 0626 challenge.
 
@@ -21,14 +21,24 @@ The key idea was to avoid trying to execute JavaScript on the challenge origin. 
 
 Repeating that oracle leaked the private note title, which contained the flag.
 
-## Target
+## Finding at a Glance
 
-- **Challenge:** Intigriti 0626
-- **Asset:** `https://challenge-0626.intigriti.io`
-- **Vulnerable endpoint:** `/search`
-- **Bot trigger:** `/report`
-- **Vulnerability type:** Reflected HTML injection
-- **Technique:** XS-Leak using cross-origin iframe `contentWindow.length`
+| Field | Value |
+|---|---|
+| Program | Intigriti 0626 |
+| Asset | `https://challenge-0626.intigriti.io` |
+| Affected endpoint | `/search` via `/report` admin-bot trigger |
+| Vulnerability | Reflected HTML injection and XS-Leak |
+| Impact | Character-by-character disclosure of an administrator's private note title |
+
+## Attack Path
+
+```text
+Reflected HTML injection in /search
+-> redirect the admin bot to an attacker-controlled controller
+-> iframe-length oracle tests a private-note prefix
+-> recover the private note title
+```
 
 ## Initial Observation
 
@@ -62,7 +72,7 @@ When a note was not found, the value of `q` was reflected into the response with
 
 This meant I could inject HTML into the "not found" branch.
 
-## CSP Limitation
+### CSP Limitation
 
 A direct XSS payload was not enough because the challenge used a strict CSP.
 
@@ -78,7 +88,7 @@ This was enough to redirect the admin bot away from the challenge site to my own
 
 That turned a CSP-limited HTML injection into an admin-controlled navigation primitive.
 
-## Redirecting the Admin Bot
+### Redirecting the Admin Bot
 
 The report path contained a reflected meta refresh payload inside the `q` parameter:
 
@@ -142,7 +152,7 @@ This gave an oracle:
 - If the "not found" branch is not rendered, the injected `<iframe>` is absent.
 - If there is no match, the injected `<iframe>` is rendered.
 
-## The XS-Leak Oracle
+### The XS-Leak Oracle
 
 Even though the challenge page is cross-origin, the attacker-controlled parent page can still read:
 
@@ -167,7 +177,7 @@ For a non-matching prefix, the "not found" branch reflected the injected `<ifram
 
 This provided a clean boolean oracle for prefix matching.
 
-## Controller Page
+### Controller Page
 
 The attacker-controlled controller served an oracle page to the admin bot.
 
@@ -205,7 +215,7 @@ f.onload = () => {
 };
 ```
 
-## Exploit Flow
+## Reproduction
 
 The full exploit flow was:
 
@@ -220,7 +230,7 @@ The full exploit flow was:
 9. `iframe.contentWindow.length` reveals whether the candidate prefix matches an admin private note title.
 10. Repeat character by character until the full note title is leaked.
 
-## Proof of Concept
+### Proof of Concept
 
 The PoC script supported three useful modes:
 
@@ -329,7 +339,7 @@ A successful final check returned:
 ![Final flag verification](/assets/img/posts/intigriti-0626/final-check.png)
 _The final candidate was verified with the closing brace._
 
-## Payloads Used
+### Payloads Used
 
 ### Report Payload
 
@@ -355,7 +365,7 @@ In JavaScript:
 prefix + '%' + String.fromCharCode(0) + '<iframe></iframe>'
 ```
 
-## Why This Leaks Admin Data
+## Impact
 
 The attacker cannot directly read the admin's private notes cross-origin.
 
@@ -370,3 +380,19 @@ Does the admin have a private note title matching this prefix?
 ```
 
 Repeating the question leaks the full title.
+
+## Remediation
+
+- Encode the reflected search parameters before rendering them into HTML.
+- Require a safe, allowlisted same-origin path for admin-bot visits instead of accepting arbitrary reflected navigation.
+- Ensure search responses do not expose cross-origin observable differences for private resources.
+- Apply restrictive framing and content-security policies as defense in depth, but do not treat them as the primary fix.
+
+## Takeaways
+
+- A CSP that blocks script execution does not remove the impact of reflected HTML injection.
+- Cross-origin response differences can become a high-impact oracle when a privileged bot is induced to browse attacker-controlled flows.
+
+## Disclosure Note
+
+This write-up documents the completed Intigriti 0626 challenge and keeps the reproduction focused on the challenge environment.

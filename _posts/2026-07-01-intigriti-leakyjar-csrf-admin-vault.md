@@ -1,15 +1,15 @@
 ---
 title: "Intigriti LeakyJar: Forcing the Master Baker to Share the Admin Vault with CSRF"
 date: 2026-07-01 00:00:00 +0700
-categories: [Writeups, Web Security]
-tags: [Intigriti, LeakyJar, CSRF, admin-bot, bug-bounty, web-security]
+categories: [Writeups, Bug Bounty]
+tags: [Intigriti, LeakyJar, CSRF, admin-bot, bug-bounty, web-security, AI]
 permalink: /posts/intigriti-leakyjar-csrf-admin-vault/
 ---
 
 > **Summary:** I solved the Intigriti LeakyJar challenge by abusing a missing CSRF protection on `/share`. By making the Master Baker bot visit an attacker-controlled page, I could force the admin session to share the admin vault with my account and read the flag from the shared recipe box.
 {: .prompt-info }
 
-## Introduction
+## Finding Overview
 
 This write-up covers my solution for the Intigriti LeakyJar challenge.
 
@@ -21,14 +21,24 @@ That combination made the issue exploitable. I hosted a page that automatically 
 
 The result was that the Master Baker's private vault appeared under my account's shared vaults, exposing the secret recipe that contained the flag.
 
-## Target
+## Finding at a Glance
 
-- **Challenge:** Intigriti LeakyJar
-- **Asset:** `https://leakyjar.intigriti.io`
-- **Vulnerable endpoint:** `/share`
-- **Bot trigger:** `/submit`
-- **Vulnerability type:** Cross-Site Request Forgery
-- **Impact:** Forced admin vault sharing and private data disclosure
+| Field | Value |
+|---|---|
+| Program | Intigriti LeakyJar |
+| Asset | `https://leakyjar.intigriti.io` |
+| Affected endpoint | `/share` via `/submit` admin-bot trigger |
+| Vulnerability | Cross-Site Request Forgery |
+| Impact | Forced sharing of the administrator's private vault with the attacker |
+
+## Attack Path
+
+```text
+Attacker-hosted auto-submitting form
+-> Master Baker bot visits it
+-> authenticated cross-site POST to /share
+-> attacker receives the administrator's shared vault
+```
 
 ## Initial Observation
 
@@ -60,7 +70,7 @@ username=ATTACKER_USERNAME
 
 After the request succeeded, the target user could open `/vault` and see a new entry under the shared vaults section.
 
-## The Vulnerable Share Flow
+### The Vulnerable Share Flow
 
 The `/share` endpoint performed a sensitive state-changing action: it shared the currently authenticated user's vault with another account.
 
@@ -87,7 +97,7 @@ The missing controls were:
 
 This allowed an attacker to force an authenticated user to share their own vault with an attacker-controlled account.
 
-## CSRF Payload
+## Reproduction
 
 The payload was a basic auto-submitting HTML form:
 
@@ -114,7 +124,7 @@ ATTACKER_USERNAME
 
 That value had to be replaced with the username of my attacker account.
 
-## Exploit Flow
+### Exploitation Flow
 
 The full exploit flow was:
 
@@ -130,7 +140,7 @@ The full exploit flow was:
 10. The attacker opens `/vault` and finds the Master Baker's vault under shared vaults.
 11. Opening the shared vault reveals the private recipe containing the flag.
 
-## Proof of Concept
+### Proof of Concept
 
 ### 1. Register an Attacker Account
 
@@ -199,7 +209,7 @@ Opening that shared vault exposed the Master Baker's private recipe box. The sec
 INTIGRITI{019ef404-1e44-7748-bdcf-ca7b12dbfee0}
 ```
 
-## Why This Leaks Admin Data
+## Impact
 
 The attacker never needs to know the admin's password or steal the admin's session cookie.
 
@@ -208,3 +218,19 @@ Instead, the attacker abuses the browser's normal cookie behavior. The Master Ba
 Because `/share` does not distinguish between a legitimate in-app request and a forged cross-site form submission, the server accepts the action and shares the admin vault with the attacker.
 
 This turns a CSRF bug into a direct private data disclosure issue.
+
+## Remediation
+
+- Require a server-validated CSRF token on every state-changing share request.
+- Validate `Origin` and `Referer` for browser-based requests as defense in depth.
+- Use `SameSite` cookies appropriate to the application's cross-site requirements.
+- Require explicit confirmation before sharing a privileged vault with a new recipient.
+
+## Takeaways
+
+- An authenticated browser bot can turn missing CSRF protection into a privileged server-side action.
+- CSRF impact is measurable when the affected action grants attacker-controlled access to private data.
+
+## Disclosure Note
+
+This write-up documents the completed LeakyJar challenge and intentionally omits reusable credentials or other sensitive platform data.

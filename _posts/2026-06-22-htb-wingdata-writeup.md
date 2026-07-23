@@ -2,11 +2,22 @@
 title: "HTB WingData Write-up: Wing FTP RCE to Root"
 date: 2026-06-22 17:00:00 +0700
 categories: [Writeups, HackTheBox]
-tags: [HackTheBox, Linux, Wing-FTP, CVE-2025-47812, CVE-2025-4517, RCE, hashcat, privilege-escalation]
+tags: [HackTheBox, Linux, Wing-FTP, CVE-2025-47812, CVE-2025-4517, RCE, hashcat, privilege-escalation, AI]
 permalink: /posts/htb-wingdata-writeup/
 ---
 
-## Overview
+> **Summary:** WingData chains unauthenticated Wing FTP Server RCE, recoverable application credentials, and a vulnerable root-run backup restore path to obtain root access.
+{: .prompt-info }
+
+## Machine Information
+
+| Field | Value |
+|---|---|
+| Machine | WingData |
+| Platform | Hack The Box |
+| OS | Linux |
+
+## Attack Path
 
 WingData is a Linux machine that chains a vulnerable Wing FTP Server instance with weak credential storage and a vulnerable privileged backup restore script.
 
@@ -22,7 +33,7 @@ Wing FTP RCE
 -> root
 ```
 
-## Recon
+## Enumeration
 
 The target exposed a Wing FTP Server web interface:
 
@@ -38,7 +49,9 @@ The interesting host was:
 http://ftp.wingdata.htb
 ```
 
-## Foothold: CVE-2025-47812
+## Initial Access
+
+### CVE-2025-47812: Wing FTP Server RCE
 
 Wing FTP Server 7.4.3 was vulnerable to a null-byte Lua injection issue in the `username` parameter of `/loginok.html`.
 
@@ -69,7 +82,7 @@ This confirmed command execution as:
 uid=1000(wingftp) gid=1000(wingftp)
 ```
 
-## RCE Helper
+### RCE Helper
 
 To make enumeration easier, I used a small helper script that sends the payload, extracts the cookie, triggers `/dir.html`, and logs out to avoid session-limit issues.
 
@@ -131,7 +144,9 @@ The Wing FTP installation directory was:
 /opt/wftpserver
 ```
 
-## Credential Extraction
+## User Access
+
+### Credential Extraction
 
 The application data directory contained XML files for Wing FTP users:
 
@@ -168,7 +183,7 @@ Output showed:
 wacky:x:1001:1001::/home/wacky:/bin/bash
 ```
 
-## Hash Cracking
+### Hash Cracking
 
 At first, treating the hash as raw SHA-256 did not work:
 
@@ -207,7 +222,7 @@ hashcat -m 1410 wacky_1410.txt --show
 
 This recovered the password for `wacky`.
 
-## SSH as wacky
+### SSH as `wacky`
 
 Using the cracked credential:
 
@@ -258,7 +273,7 @@ Important details:
 
 This made it possible to abuse CVE-2025-4517 with a crafted tar archive.
 
-## Root: CVE-2025-4517
+### Root: CVE-2025-4517
 
 The vulnerable restore script extracted an attacker-controlled tar file as root.
 
@@ -303,3 +318,23 @@ The root flag was in:
 ```text
 /root/root.txt
 ```
+
+## Vulnerabilities / Weaknesses Used
+
+### Wing FTP Server RCE (CVE-2025-47812)
+
+The unauthenticated login flow allowed Lua injection through the `username` parameter, providing command execution as the Wing FTP service account.
+
+### Weak Credential Storage and Reuse
+
+Wing FTP user XML files exposed a crackable password hash for `wacky`, whose account was also valid for SSH access.
+
+### Tar Extraction Issue (CVE-2025-4517)
+
+A root-run restore script extracted an attacker-controlled archive from a directory writable by `wacky`, enabling privilege escalation.
+
+## Takeaways
+
+- Treat application-side user databases as credential sources during post-exploitation enumeration.
+- Keep privileged restore paths outside directories writable by lower-privileged users.
+- Archive extraction needs strict path and metadata validation even when a safety filter is enabled.

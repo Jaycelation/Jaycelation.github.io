@@ -2,7 +2,7 @@
 title: "SekaiCTF 2026: [Blockchain] / PP Farming — Reentrancy and Delegatecall Storage Collision"
 date: 2026-06-30 10:00:00 +0700
 categories: [Writeups, Blockchain Security]
-tags: [SekaiCTF2026, Solidity, reentrancy, delegatecall, storage-collision, smart-contract, blockchain-security, CTF]
+tags: [SekaiCTF2026, Solidity, reentrancy, delegatecall, storage-collision, smart-contract, blockchain-security, CTF, AI]
 permalink: /posts/sekaictf-pp-farming-reentrancy-delegatecall/
 ---
 

@@ -1,15 +1,15 @@
 ---
 title: "Intigriti 0526: Stored XSS via DOM Clobbering in the Testimonial Feed"
 date: 2026-05-27 10:00:00 +0700
-categories: [Writeups, Web Security]
-tags: [Intigriti, XSS, stored-xss, dom-clobbering, dompurify, bug-bounty, web-security, client-side-security]
+categories: [Writeups, Bug Bounty]
+tags: [Intigriti, XSS, stored-xss, dom-clobbering, dompurify, bug-bounty, web-security, client-side-security, AI]
 permalink: /posts/intigriti-0526-stored-xss-dom-clobbering/
 ---
 
 > **Summary:** I solved the Intigriti 0526 challenge by abusing a DOM clobbering primitive in sanitized testimonial content, turning harmless-looking anchors into a stored XSS chain.
 {: .prompt-info }
 
-## Introduction
+## Finding Overview
 
 This write-up covers my solution for the Intigriti 0526 challenge, where I found a stored cross-site scripting issue in the testimonial feed.
 
@@ -17,13 +17,24 @@ The interesting part of the bug was not a classic sanitizer bypass using an even
 
 The issue came from a DOM clobbering primitive that allowed attacker-controlled markup to overwrite a global configuration object later trusted by the application.
 
-## Target
+## Finding at a Glance
 
-- **Challenge:** Intigriti 0526
-- **Asset:** `https://challenge-0526.intigriti.io`
-- **Vulnerable page:** `https://challenge-0526.intigriti.io/challenge#testimonials`
-- **Vulnerability type:** Stored cross-site scripting
-- **Technique:** DOM clobbering
+| Field | Value |
+|---|---|
+| Program | Intigriti 0526 |
+| Asset | `https://challenge-0526.intigriti.io` |
+| Affected endpoint | `/challenge#testimonials` |
+| Vulnerability | Stored cross-site scripting |
+| Impact | JavaScript execution in another user's browser through a stored testimonial |
+
+## Attack Path
+
+```text
+Attacker-controlled testimonial HTML
+-> DOM clobbers PixelAnalyticsConfig
+-> application loads attacker-controlled script
+-> stored XSS in viewers' browser
+```
 
 ## Initial Observation
 
@@ -80,7 +91,7 @@ The final trick was to use named anchors so that:
 - `config.scriptUrl` resolves to an anchor element
 - assigning that anchor element to `s.src` coerces it to its `href`
 
-## Payload
+## Reproduction
 
 The final testimonial payload was:
 
@@ -102,7 +113,7 @@ Content-Type: application/javascript
 
 The dots in the hostname were encoded as `%2e` because the server-side filter rejected literal `.` characters in submitted testimonial content.
 
-## Exploitation Flow
+### Exploitation Flow
 
 1. I logged in to the challenge application.
 2. I opened the testimonial submission flow.
@@ -125,13 +136,13 @@ The result was stored XSS on:
 https://challenge-0526.intigriti.io/challenge#testimonials
 ```
 
-## Why This Is Stored XSS
+## Impact
 
 This was not self-XSS. The payload was stored by the application and later executed when another user viewed the testimonial feed.
 
 The victim did not need to paste code into DevTools, modify their own browser state, or interact with an attacker-controlled page. They only needed to visit the affected testimonials page.
 
-## Impact
+### Security Impact
 
 An attacker could store JavaScript that executes in another user's browser under the trusted origin:
 
@@ -149,7 +160,7 @@ In a real application, this could allow an attacker to:
 
 Even when cookies are protected with `HttpOnly`, same-origin JavaScript can often still interact with authenticated application endpoints and page state, so stored XSS remains impactful.
 
-## Recommended Fix
+## Remediation
 
 The main fix is to avoid trusting clobberable global DOM properties for security-sensitive configuration.
 
